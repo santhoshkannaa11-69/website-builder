@@ -23,6 +23,7 @@ export default function AuthPage() {
             try {
                 const response = await fetch(`${import.meta.env.VITE_BASEURL}/`, {
                     signal: controller.signal,
+                    credentials: 'include',
                 })
                 setServerStatus(response.ok ? "online" : "offline")
             } catch {

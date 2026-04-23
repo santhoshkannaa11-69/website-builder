@@ -29,7 +29,9 @@ async function initializePrisma() {
 }
 
 // Initialize immediately
-initializePrisma();
+initializePrisma().then(() => {
+    // Do nothing
+});
 
 // Mock prisma client for development when database is not available
 function createMockPrismaClient(): any {

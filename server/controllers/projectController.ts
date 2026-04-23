@@ -352,17 +352,14 @@ export const getProjectPreview = async (req: Request, res: Response) => {
 // Get published projects
 export const getPublishedProjects = async (req: Request, res: Response) => {
     try {
-        
         const projects = await prisma.websiteProject.findMany({
             where: {isPublished: true},
             include: {user: true}
         })
-
                
         return sendSuccess(res, { projects });
-
     } catch (error: any) {
-        console.log(error.code || error.message);
+        console.log('Error in getPublishedProjects:', error.code || error.message);
         return sendError(res, "Unable to load published projects right now.");
     }  
 }

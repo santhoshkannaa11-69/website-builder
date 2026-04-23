@@ -8,7 +8,12 @@ require("dotenv/config");
 const better_auth_1 = require("better-auth");
 const prisma_1 = require("better-auth/adapters/prisma");
 const prisma_2 = __importDefault(require("./prisma"));
-const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',') || [];
+const trustedOrigins = [
+    'https://santhoshkannaa11-69.github.io',
+    'https://santhoshkannaa11-69.github.io/website-builder',
+    'https://web-wizard-liard.vercel.app',
+    ...(process.env.TRUSTED_ORIGINS?.split(',') || [])
+];
 // Check if we're using mock database
 const isMockDatabase = !process.env.DATABASE_URL;
 exports.auth = (0, better_auth_1.betterAuth)({

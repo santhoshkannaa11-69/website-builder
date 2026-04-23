@@ -15,13 +15,28 @@ const Community = () => {
 
     const fetchProjects = useCallback(async () => {
         try {
+            console.log('Fetching projects from:', `${import.meta.env.VITE_BASEURL}/api/project/published`);
             const { data } = await api.get(`/api/project/published`);
+            console.log('Received projects data:', data);
             setProjects(data.projects);
             setLoading(false);
         } catch (error: unknown) {
-            console.log(error);
+            console.error('Full error object:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage);
+            console.error('Error message:', errorMessage);
+            
+            // Check if it's an axios error with more details
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as any;
+                console.error('Axios error details:', {
+                    status: axiosError.response?.status,
+                    statusText: axiosError.response?.statusText,
+                    data: axiosError.response?.data
+                });
+                toast.error(`Network Error: ${axiosError.response?.status || 'Unknown'} - ${errorMessage}`);
+            } else {
+                toast.error(`Network Error: ${errorMessage}`);
+            }
         }
     }, [])
 

@@ -1,5 +1,5 @@
 
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Pricing from "./pages/Pricing";
 import Projects from "./pages/Projects";
@@ -27,6 +27,7 @@ const App = () => {
       {!hidenavbar && <Navbar />}
       <Routes>
         <Route path='/' element={<Home />} />
+        <Route path='' element={<Navigate to="/" replace />} />
         <Route path='/pricing' element={<Pricing />} />
         <Route path='/projects/:projectID' element={<Projects />} />
         <Route path='/projects' element={<MyProjects />} />

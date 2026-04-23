@@ -44,9 +44,9 @@ const stripeWebhook = async (request, response) => {
             default:
                 console.log(`Unhandled event type ${event.type}`);
         }
-        // Return a response to acknowledge receipt of the event
-        response.json({ received: true });
     }
+    // Return a response to acknowledge receipt of the event
+    response.json({ received: true });
 };
 exports.stripeWebhook = stripeWebhook;
 //# sourceMappingURL=stripeWebhook.js.map

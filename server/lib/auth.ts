@@ -73,12 +73,11 @@ const createMockAdapter = () => {
 console.log('Auth Config - DATABASE_URL:', !!process.env.DATABASE_URL);
 console.log('Auth Config - prisma ready:', !!prisma);
 console.log('Auth Config - NODE_ENV:', process.env.NODE_ENV);
-console.log('Auth Config - trustedOrigins:', process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'] : trustedOrigins);
+console.log('Auth Config - trustedOrigins:', process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'] : trustedOrigins);
 
+// Test basic auth configuration without database
 export const auth = betterAuth({
-    database: process.env.NODE_ENV === 'production' && prisma ? prismaAdapter(prisma, {
-        provider: "postgresql", 
-    }) : undefined, // Only use database adapter in production when Prisma is ready
+    database: undefined, // Completely disable database for testing
     emailAndPassword: { 
         enabled: true, 
         requireEmailVerification: false // Disable email verification for development
@@ -86,7 +85,7 @@ export const auth = betterAuth({
     user: {
         deleteUser: {enabled: true}
     },
-    trustedOrigins: process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'] : trustedOrigins, // Allow localhost origins in development
+    trustedOrigins: process.env.NODE_ENV !== 'production' ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000'] : trustedOrigins, // Allow localhost origins in development
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     secret: process.env.BETTER_AUTH_SECRET || 'test-secret-key-for-development-only',
     session: {

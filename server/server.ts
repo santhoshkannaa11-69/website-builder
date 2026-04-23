@@ -16,6 +16,7 @@ const corsOptions = {
     origin: [
         'http://localhost:5173',
         'http://localhost:5174',
+        'http://localhost:5175',
         'http://localhost:3000',
         'https://santhoshkannaa11-69.github.io',
         'https://santhoshkannaa11-69.github.io/website-builder',
@@ -55,6 +56,13 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Test endpoint to verify server is receiving requests
+app.post('/test', (req: Request, res: Response) => {
+    console.log('Test endpoint hit!');
+    console.log('Body:', req.body);
+    res.json({ message: 'Test successful', body: req.body });
 });
 
 app.use('/api/user', userRouter);

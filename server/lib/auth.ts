@@ -3,7 +3,12 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import prisma from "./prisma";
 
-const trustedOrigins = process.env.TRUSTED_ORIGINS?.split(',') || [];
+const trustedOrigins = [
+    'https://santhoshkannaa11-69.github.io',
+    'https://santhoshkannaa11-69.github.io/website-builder',
+    'https://web-wizard-liard.vercel.app',
+    ...(process.env.TRUSTED_ORIGINS?.split(',') || [])
+];
 
 // Check if we're using mock database
 const isMockDatabase = !process.env.DATABASE_URL;

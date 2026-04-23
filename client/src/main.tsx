@@ -6,7 +6,7 @@ import { Providers } from "./providers.tsx"
 
 
 createRoot(document.getElementById('root')!).render(
-  <BrowserRouter>
+  <BrowserRouter basename="/website-builder">
   <Providers>
     <App />
   </Providers>

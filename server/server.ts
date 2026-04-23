@@ -14,7 +14,9 @@ const port = 3000;
 const corsOptions = {
     origin: [
         'https://santhoshkannaa11-69.github.io',
+        'https://santhoshkannaa11-69.github.io/website-builder',
         'http://localhost:3000',
+        'https://web-wizard-liard.vercel.app',
         ...(process.env.TRUSTED_ORIGINS?.split(',') || [])
     ],
     credentials: true,

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express'
-import prisma from '../lib/prisma.js';
-import { runAICompletion } from '../utils/ai.js';
-import { sendError, sendSuccess } from '../utils/responses.js';
+import prisma from '../lib/prisma';
+import { runAICompletion } from '../utils/ai';
+import { sendError, sendSuccess } from '../utils/responses';
 import Stripe from 'stripe';
 
 const shouldEnhancePrompt = (prompt: string) => {

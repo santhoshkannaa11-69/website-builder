@@ -1,6 +1,6 @@
-import prisma from '../lib/prisma.js';
-import { runAICompletion } from '../utils/ai.js';
-import { sendError, sendSuccess } from '../utils/responses.js';
+import prisma from '../lib/prisma';
+import { runAICompletion } from '../utils/ai';
+import { sendError, sendSuccess } from '../utils/responses';
 const shouldEnhancePrompt = (prompt) => {
     const normalizedPrompt = prompt.trim();
     const wordCount = normalizedPrompt.split(/\s+/).filter(Boolean).length;

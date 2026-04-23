@@ -1,6 +1,6 @@
-import { auth } from "../lib/auth.js";
+import { auth } from "../lib/auth";
 import { fromNodeHeaders } from "better-auth/node";
-import { sendError } from "../utils/responses.js";
+import { sendError } from "../utils/responses";
 export const protect = async (req, res, next) => {
     try {
         console.log('Auth: Checking session for:', req.originalUrl);

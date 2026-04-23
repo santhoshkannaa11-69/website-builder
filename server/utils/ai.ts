@@ -1,4 +1,4 @@
-import openai from "../configs/openai.js";
+import openai from "../configs/openai";
 
 type ChatMessage = {
     role: "system" | "user" | "assistant";

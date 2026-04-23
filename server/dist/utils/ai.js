@@ -1,4 +1,4 @@
-import openai from "../configs/openai.js";
+import openai from "../configs/openai";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const runAICompletion = async (messages, options = {}) => {
     // Check if API key is configured

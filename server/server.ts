@@ -32,8 +32,6 @@ app.use(cors(corsOptions))
 app.use(express.json({limit: '50mb'}))
 app.post('/api/stripe', express.raw({ type: 'application/json' }), stripeWebhook)
 
-app.use('/api/auth', toNodeHandler(auth));
-
 // Debug middleware to track all API requests
 app.use((req: Request, res: Response, next) => {
     console.log(`${req.method} ${req.originalUrl}`);
@@ -41,6 +39,8 @@ app.use((req: Request, res: Response, next) => {
     console.log('Body:', req.body);
     next();
 });
+
+app.use('/api/auth', toNodeHandler(auth));
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

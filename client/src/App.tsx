@@ -26,8 +26,8 @@ const App = () => {
       <Toaster position="top-center" richColors />
       {!hidenavbar && <Navbar />}
       <Routes>
-        <Route path='/' element={<Home />} />
         <Route path='' element={<Navigate to="/" replace />} />
+        <Route path='/' element={<Home />} />
         <Route path='/pricing' element={<Pricing />} />
         <Route path='/projects/:projectID' element={<Projects />} />
         <Route path='/projects' element={<MyProjects />} />

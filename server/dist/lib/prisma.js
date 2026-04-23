@@ -1,15 +1,54 @@
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.js";
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+require("dotenv/config");
 let prisma;
-// Check if database URL is configured
-if (!process.env.DATABASE_URL) {
-    console.warn("DATABASE_URL not found in environment variables. Using in-memory fallback.");
-    // Create a mock prisma client for development
-    prisma = createMockPrismaClient();
-}
-else {
+// Initialize prisma client asynchronously
+async function initializePrisma() {
     try {
+        // Check if database URL is configured
+        if (!process.env.DATABASE_URL) {
+            console.warn("DATABASE_URL not found in environment variables. Using in-memory fallback.");
+            prisma = createMockPrismaClient();
+            return;
+        }
+        // Dynamic imports for ES modules
+        const [{ PrismaPg }, { PrismaClient }] = await Promise.all([
+            Promise.resolve().then(() => __importStar(require("@prisma/adapter-pg"))),
+            Promise.resolve().then(() => __importStar(require("../generated/prisma/client.js")))
+        ]);
         const connectionString = process.env.DATABASE_URL;
         const adapter = new PrismaPg({ connectionString });
         prisma = new PrismaClient({ adapter });
@@ -20,6 +59,8 @@ else {
         prisma = createMockPrismaClient();
     }
 }
+// Initialize immediately
+initializePrisma();
 // Mock prisma client for development when database is not available
 function createMockPrismaClient() {
     console.warn("Using mock database - projects will be stored in memory only!");
@@ -139,5 +180,5 @@ function createMockPrismaClient() {
         }
     };
 }
-export default prisma;
+exports.default = prisma;
 //# sourceMappingURL=prisma.js.map

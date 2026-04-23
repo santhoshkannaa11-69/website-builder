@@ -1,7 +1,13 @@
-import Stripe from "stripe";
-import prisma from "../lib/prisma";
-export const stripeWebhook = async (request, response) => {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.stripeWebhook = void 0;
+const stripe_1 = __importDefault(require("stripe"));
+const prisma_1 = __importDefault(require("../lib/prisma"));
+const stripeWebhook = async (request, response) => {
+    const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
     const endpointSecret = process.env.STRIPE_WEBHOOK_KEY;
     if (endpointSecret) {
         // Get the signature sent by Stripe
@@ -24,12 +30,12 @@ export const stripeWebhook = async (request, response) => {
                 const session = sessionList.data[0];
                 const { transactionId, appId } = session.metadata;
                 if (appId === 'ai-website-builder' && transactionId) {
-                    const transaction = await prisma.transaction.update({
+                    const transaction = await prisma_1.default.transaction.update({
                         where: { id: transactionId },
                         data: { isPaid: true }
                     });
                     // Add the credits to the user data
-                    await prisma.user.update({
+                    await prisma_1.default.user.update({
                         where: { id: transaction.userId },
                         data: { credits: { increment: transaction.credits } }
                     });
@@ -42,4 +48,5 @@ export const stripeWebhook = async (request, response) => {
         response.json({ received: true });
     }
 };
+exports.stripeWebhook = stripeWebhook;
 //# sourceMappingURL=stripeWebhook.js.map

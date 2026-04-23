@@ -1,6 +1,12 @@
-import openai from "../configs/openai";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.runAICompletion = void 0;
+const openai_1 = __importDefault(require("../configs/openai"));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-export const runAICompletion = async (messages, options = {}) => {
+const runAICompletion = async (messages, options = {}) => {
     // Check if API key is configured
     if (!process.env.AI_API_KEY) {
         console.warn("AI_API_KEY not found in environment variables. Using fallback template.");
@@ -12,7 +18,7 @@ export const runAICompletion = async (messages, options = {}) => {
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const response = await Promise.race([
-                openai.chat.completions.create({
+                openai_1.default.chat.completions.create({
                     model,
                     messages,
                 }),
@@ -33,6 +39,7 @@ export const runAICompletion = async (messages, options = {}) => {
     }
     return generateFallbackWebsite(messages);
 };
+exports.runAICompletion = runAICompletion;
 // Helper functions for advanced website generation
 const detectWebsiteType = (message) => {
     const lowerMessage = message.toLowerCase();

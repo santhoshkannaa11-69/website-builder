@@ -1,16 +1,23 @@
 import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.js";
 
-let prisma: PrismaClient;
+let prisma: any;
 
-// Check if database URL is configured
-if (!process.env.DATABASE_URL) {
-    console.warn("DATABASE_URL not found in environment variables. Using in-memory fallback.");
-    // Create a mock prisma client for development
-    prisma = createMockPrismaClient();
-} else {
+// Initialize prisma client asynchronously
+async function initializePrisma() {
     try {
+        // Check if database URL is configured
+        if (!process.env.DATABASE_URL) {
+            console.warn("DATABASE_URL not found in environment variables. Using in-memory fallback.");
+            prisma = createMockPrismaClient();
+            return;
+        }
+
+        // Dynamic imports for ES modules
+        const [{ PrismaPg }, { PrismaClient }] = await Promise.all([
+            import("@prisma/adapter-pg"),
+            import("../generated/prisma/client.js")
+        ]);
+
         const connectionString = process.env.DATABASE_URL;
         const adapter = new PrismaPg({ connectionString });
         prisma = new PrismaClient({ adapter });
@@ -21,8 +28,11 @@ if (!process.env.DATABASE_URL) {
     }
 }
 
+// Initialize immediately
+initializePrisma();
+
 // Mock prisma client for development when database is not available
-function createMockPrismaClient(): PrismaClient {
+function createMockPrismaClient(): any {
     console.warn("Using mock database - projects will be stored in memory only!");
     
     // Simple in-memory storage for development

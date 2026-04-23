@@ -56,7 +56,7 @@ export const makeRevison = async (req: Request, res: Response) => {
             return sendError(res, 'Project not found', 404, "NOT_FOUND");
         }
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             await tx.conversation.create({
                 data: {
                     role: 'user',
@@ -263,7 +263,7 @@ export const rollbackToVersion = async (req: Request, res: Response) => {
 
         console.log('Rollback: Found project with', project.versions.length, 'versions');
 
-        const version = project.versions.find((version) => version.id === versionId);
+        const version = project.versions.find((version: any) => version.id === versionId);
 
         if(!version){
             console.log('Rollback: Version not found:', versionId);

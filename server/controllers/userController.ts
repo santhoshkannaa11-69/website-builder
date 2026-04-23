@@ -52,7 +52,7 @@ export const createUserProject = async (req: Request, res: Response) => {
             return sendError(res, 'Add credits to create more projects', 403, "INSUFFICIENT_CREDITS");
         }
 
-        const project = await prisma.$transaction(async (tx) => {
+        const project = await prisma.$transaction(async (tx: any) => {
             const createdProject = await tx.websiteProject.create({
                 data: {
                     name: initial_prompt.length > 50 ? initial_prompt.substring(0, 47) + '...' : initial_prompt,

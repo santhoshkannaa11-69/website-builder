@@ -1,13 +1,19 @@
-import prisma from '../lib/prisma';
-import { runAICompletion } from '../utils/ai';
-import { sendError, sendSuccess } from '../utils/responses';
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.saveProjectCode = exports.getProjectById = exports.getPublishedProjects = exports.getProjectPreview = exports.deleteProject = exports.rollbackToVersion = exports.makeRevison = void 0;
+const prisma_1 = __importDefault(require("../lib/prisma"));
+const ai_1 = require("../utils/ai");
+const responses_1 = require("../utils/responses");
 const shouldEnhancePrompt = (prompt) => {
     const normalizedPrompt = prompt.trim();
     const wordCount = normalizedPrompt.split(/\s+/).filter(Boolean).length;
     return wordCount > 18 && normalizedPrompt.length > 80;
 };
 // Controller Function to Make Revision
-export const makeRevison = async (req, res) => {
+const makeRevison = async (req, res) => {
     const userId = req.userId;
     const { projectId } = req.params;
     console.log('Revision: User ID from request:', userId);
@@ -20,30 +26,30 @@ export const makeRevison = async (req, res) => {
     try {
         if (!req.userId) {
             console.log('Revision: No user ID found - authentication failed');
-            return sendError(res, 'Unauthorized', 401, "UNAUTHORIZED");
+            return (0, responses_1.sendError)(res, 'Unauthorized', 401, "UNAUTHORIZED");
         }
         const { message } = req.body;
-        const user = await prisma.user.findUnique({
+        const user = await prisma_1.default.user.findUnique({
             where: { id: req.userId }
         });
         if (!req.userId || !user) {
-            return sendError(res, 'Unauthorized', 401, "UNAUTHORIZED");
+            return (0, responses_1.sendError)(res, 'Unauthorized', 401, "UNAUTHORIZED");
         }
         if (user.credits < 5) {
             console.log('Revision: Insufficient credits. User has:', user.credits, 'Required: 5');
-            return sendError(res, 'You don\'t have enough credits to make revisions. Please add more credits to continue.', 403, "INSUFFICIENT_CREDITS");
+            return (0, responses_1.sendError)(res, 'You don\'t have enough credits to make revisions. Please add more credits to continue.', 403, "INSUFFICIENT_CREDITS");
         }
         if (!message || message.trim() === '') {
-            return sendError(res, 'Please enter a valid prompt', 400, "VALIDATION_ERROR");
+            return (0, responses_1.sendError)(res, 'Please enter a valid prompt', 400, "VALIDATION_ERROR");
         }
-        const currentProject = await prisma.websiteProject.findUnique({
+        const currentProject = await prisma_1.default.websiteProject.findUnique({
             where: { id: projectId, userId },
             include: { versions: true }
         });
         if (!currentProject) {
-            return sendError(res, 'Project not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Project not found', 404, "NOT_FOUND");
         }
-        await prisma.$transaction(async (tx) => {
+        await prisma_1.default.$transaction(async (tx) => {
             await tx.conversation.create({
                 data: {
                     role: 'user',
@@ -63,7 +69,7 @@ export const makeRevison = async (req, res) => {
                 }
             });
         });
-        sendSuccess(res, {
+        (0, responses_1.sendSuccess)(res, {
             message: 'Revision started',
             projectId
         });
@@ -72,14 +78,14 @@ export const makeRevison = async (req, res) => {
                 const shouldEnhance = shouldEnhancePrompt(message);
                 let enhancedPrompt = message.trim();
                 if (shouldEnhance) {
-                    await prisma.conversation.create({
+                    await prisma_1.default.conversation.create({
                         data: {
                             role: 'assistant',
                             content: 'Step 2/4: Enhancing your prompt for better results...',
                             projectId
                         }
                     });
-                    enhancedPrompt = await runAICompletion([
+                    enhancedPrompt = await (0, ai_1.runAICompletion)([
                         {
                             role: 'system',
                             content: `
@@ -100,7 +106,7 @@ export const makeRevison = async (req, res) => {
                         }
                     ], { retries: 2, timeoutMs: 60000 }) || message.trim();
                 }
-                await prisma.conversation.create({
+                await prisma_1.default.conversation.create({
                     data: {
                         role: 'assistant',
                         content: shouldEnhance
@@ -109,7 +115,7 @@ export const makeRevison = async (req, res) => {
                         projectId
                     }
                 });
-                await prisma.conversation.create({
+                await prisma_1.default.conversation.create({
                     data: {
                         role: 'assistant',
                         content: 'Step 3/4: Generating updated website code...',
@@ -118,7 +124,7 @@ export const makeRevison = async (req, res) => {
                 });
                 console.log('Revision: Starting AI generation for prompt:', enhancedPrompt);
                 console.log('Revision: Current code length:', currentProject.current_code?.length || 0);
-                const code = await runAICompletion([
+                const code = await (0, ai_1.runAICompletion)([
                     {
                         role: 'system',
                         content: `
@@ -143,7 +149,7 @@ export const makeRevison = async (req, res) => {
                 console.log('Revision: AI generation completed. Generated code length:', code?.length || 0);
                 // Code generation will always succeed - fallback system ensures this
                 // No need to check for empty code as the AI system always returns valid HTML
-                await prisma.conversation.create({
+                await prisma_1.default.conversation.create({
                     data: {
                         role: 'assistant',
                         content: 'Step 4/4: Saving your new version...',
@@ -154,7 +160,7 @@ export const makeRevison = async (req, res) => {
                     .replace(/```$/g, '')
                     .trim();
                 console.log('Revision: Creating version with code length:', cleanedCode.length);
-                const version = await prisma.version.create({
+                const version = await prisma_1.default.version.create({
                     data: {
                         code: cleanedCode,
                         description: 'changes made',
@@ -163,7 +169,7 @@ export const makeRevison = async (req, res) => {
                 });
                 console.log('Revision: Version created with ID:', version.id);
                 console.log('Revision: Updating project with new code');
-                await prisma.websiteProject.update({
+                await prisma_1.default.websiteProject.update({
                     where: { id: projectId },
                     data: {
                         current_code: cleanedCode,
@@ -172,7 +178,7 @@ export const makeRevison = async (req, res) => {
                 });
                 console.log('Revision: Project updated successfully');
                 console.log('Revision: Project updated successfully');
-                await prisma.conversation.create({
+                await prisma_1.default.conversation.create({
                     data: {
                         role: 'assistant',
                         content: "Done! I've made the changes to your website. You can now preview it.",
@@ -189,13 +195,13 @@ export const makeRevison = async (req, res) => {
     }
     catch (error) {
         if (userId) {
-            await prisma.user.update({
+            await prisma_1.default.user.update({
                 where: { id: userId },
                 data: { credits: { increment: 5 } }
             });
         }
         if (projectId) {
-            await prisma.conversation.create({
+            await prisma_1.default.conversation.create({
                 data: {
                     role: 'assistant',
                     content: 'I could not apply that revision right now. Please try again.',
@@ -204,34 +210,35 @@ export const makeRevison = async (req, res) => {
             }).catch(() => { });
         }
         console.log(error.code || error.message);
-        return sendError(res, "Unable to start revision right now.", 500, "REVISION_START_FAILED", true);
+        return (0, responses_1.sendError)(res, "Unable to start revision right now.", 500, "REVISION_START_FAILED", true);
     }
 };
+exports.makeRevison = makeRevison;
 // Controller Function to rollback to a specific version
-export const rollbackToVersion = async (req, res) => {
+const rollbackToVersion = async (req, res) => {
     try {
         const userId = req.userId;
         if (!userId) {
-            return sendError(res, 'Unauthorized', 401, "UNAUTHORIZED");
+            return (0, responses_1.sendError)(res, 'Unauthorized', 401, "UNAUTHORIZED");
         }
         const { projectId, versionId } = req.params;
         console.log('Rollback: Starting rollback for project:', projectId, 'to version:', versionId);
-        const project = await prisma.websiteProject.findUnique({
+        const project = await prisma_1.default.websiteProject.findUnique({
             where: { id: projectId, userId },
             include: { versions: true }
         });
         if (!project) {
             console.log('Rollback: Project not found');
-            return sendError(res, 'Project not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Project not found', 404, "NOT_FOUND");
         }
         console.log('Rollback: Found project with', project.versions.length, 'versions');
         const version = project.versions.find((version) => version.id === versionId);
         if (!version) {
             console.log('Rollback: Version not found:', versionId);
-            return sendError(res, 'Version not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Version not found', 404, "NOT_FOUND");
         }
         console.log('Rollback: Found version, updating project');
-        await prisma.websiteProject.update({
+        await prisma_1.default.websiteProject.update({
             where: { id: projectId, userId },
             data: {
                 current_code: version.code,
@@ -239,7 +246,7 @@ export const rollbackToVersion = async (req, res) => {
             }
         });
         console.log('Rollback: Project updated successfully');
-        await prisma.conversation.create({
+        await prisma_1.default.conversation.create({
             data: {
                 role: 'assistant',
                 content: "I've rolled back your website to the selected version. You can now preview it.",
@@ -247,108 +254,114 @@ export const rollbackToVersion = async (req, res) => {
             }
         });
         console.log('Rollback: Conversation entry created');
-        return sendSuccess(res, { message: 'Version rolled back successfully' });
+        return (0, responses_1.sendSuccess)(res, { message: 'Version rolled back successfully' });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to rollback version right now.");
+        return (0, responses_1.sendError)(res, "Unable to rollback version right now.");
     }
 };
+exports.rollbackToVersion = rollbackToVersion;
 // Controller Function to Delete a Project
-export const deleteProject = async (req, res) => {
+const deleteProject = async (req, res) => {
     try {
         const userId = req.userId;
         const { projectId } = req.params;
-        await prisma.websiteProject.delete({
+        await prisma_1.default.websiteProject.delete({
             where: { id: projectId, userId },
         });
-        return sendSuccess(res, { message: 'Project deleted successfully' });
+        return (0, responses_1.sendSuccess)(res, { message: 'Project deleted successfully' });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to delete project right now.");
+        return (0, responses_1.sendError)(res, "Unable to delete project right now.");
     }
 };
+exports.deleteProject = deleteProject;
 // Controller for getting project code for preview
-export const getProjectPreview = async (req, res) => {
+const getProjectPreview = async (req, res) => {
     try {
         const userId = req.userId;
         const { projectId } = req.params;
         if (!userId) {
-            return sendError(res, 'Unauthorized', 401, "UNAUTHORIZED");
+            return (0, responses_1.sendError)(res, 'Unauthorized', 401, "UNAUTHORIZED");
         }
-        const project = await prisma.websiteProject.findFirst({
+        const project = await prisma_1.default.websiteProject.findFirst({
             where: { id: projectId, userId },
             include: { versions: true }
         });
         if (!project) {
-            return sendError(res, 'Project not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Project not found', 404, "NOT_FOUND");
         }
-        return sendSuccess(res, { project });
+        return (0, responses_1.sendSuccess)(res, { project });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to load preview right now.");
+        return (0, responses_1.sendError)(res, "Unable to load preview right now.");
     }
 };
+exports.getProjectPreview = getProjectPreview;
 // Get published projects
-export const getPublishedProjects = async (req, res) => {
+const getPublishedProjects = async (req, res) => {
     try {
-        const projects = await prisma.websiteProject.findMany({
+        const projects = await prisma_1.default.websiteProject.findMany({
             where: { isPublished: true },
             include: { user: true }
         });
-        return sendSuccess(res, { projects });
+        return (0, responses_1.sendSuccess)(res, { projects });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to load published projects right now.");
+        return (0, responses_1.sendError)(res, "Unable to load published projects right now.");
     }
 };
+exports.getPublishedProjects = getPublishedProjects;
 // Get a single project by Id
-export const getProjectById = async (req, res) => {
+const getProjectById = async (req, res) => {
     try {
         const { projectId } = req.params;
-        const project = await prisma.websiteProject.findFirst({
+        const project = await prisma_1.default.websiteProject.findFirst({
             where: { id: projectId },
         });
         if (!project || project.isPublished === false || !project?.current_code) {
-            return sendError(res, 'Project not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Project not found', 404, "NOT_FOUND");
         }
-        return sendSuccess(res, { code: project.current_code });
+        return (0, responses_1.sendSuccess)(res, { code: project.current_code });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to load project code right now.");
+        return (0, responses_1.sendError)(res, "Unable to load project code right now.");
     }
 };
+exports.getProjectById = getProjectById;
 // Controller to save project code
-export const saveProjectCode = async (req, res) => {
+const saveProjectCode = async (req, res) => {
     try {
         const userId = req.userId;
         const { projectId } = req.params;
         const { code } = req.body;
         if (!userId) {
-            return sendError(res, 'Unauthorized', 401, "UNAUTHORIZED");
+            return (0, responses_1.sendError)(res, 'Unauthorized', 401, "UNAUTHORIZED");
         }
         if (!code) {
-            return sendError(res, 'Code is required', 400, "VALIDATION_ERROR");
+            return (0, responses_1.sendError)(res, 'Code is required', 400, "VALIDATION_ERROR");
         }
-        const project = await prisma.websiteProject.findUnique({
+        const project = await prisma_1.default.websiteProject.findUnique({
             where: { id: projectId, userId }
         });
         if (!project) {
-            return sendError(res, 'Project not found', 404, "NOT_FOUND");
+            return (0, responses_1.sendError)(res, 'Project not found', 404, "NOT_FOUND");
         }
-        await prisma.websiteProject.update({
+        await prisma_1.default.websiteProject.update({
             where: { id: projectId },
             data: { current_code: code, current_version_index: '' }
         });
-        return sendSuccess(res, { message: 'Project saved successfully' });
+        return (0, responses_1.sendSuccess)(res, { message: 'Project saved successfully' });
     }
     catch (error) {
         console.log(error.code || error.message);
-        return sendError(res, "Unable to save project right now.");
+        return (0, responses_1.sendError)(res, "Unable to save project right now.");
     }
 };
+exports.saveProjectCode = saveProjectCode;
 //# sourceMappingURL=projectController.js.map

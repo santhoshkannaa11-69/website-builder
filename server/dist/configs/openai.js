@@ -4,3 +4,4 @@ const openai = new OpenAI({
     apiKey: process.env.AI_API_KEY,
 });
 export default openai;
+//# sourceMappingURL=openai.js.map

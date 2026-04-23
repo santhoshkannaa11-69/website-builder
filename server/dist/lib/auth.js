@@ -40,3 +40,4 @@ export const auth = betterAuth({
         }
     }
 });
+//# sourceMappingURL=auth.js.map

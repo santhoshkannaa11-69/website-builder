@@ -32,3 +32,4 @@ export * from "./enums.js";
  */
 export const PrismaClient = $Class.getPrismaClientClass();
 export { Prisma };
+//# sourceMappingURL=client.js.map

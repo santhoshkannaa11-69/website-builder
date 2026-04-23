@@ -22,3 +22,4 @@ export const protect = async (req, res, next) => {
         return sendError(res, "Authentication failed", 401, "AUTH_FAILED");
     }
 };
+//# sourceMappingURL=auth.js.map

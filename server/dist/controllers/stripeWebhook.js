@@ -42,3 +42,4 @@ export const stripeWebhook = async (request, response) => {
         response.json({ received: true });
     }
 };
+//# sourceMappingURL=stripeWebhook.js.map

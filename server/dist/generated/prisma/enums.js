@@ -11,3 +11,4 @@ export const Role = {
     user: 'user',
     assistant: 'assistant'
 };
+//# sourceMappingURL=enums.js.map

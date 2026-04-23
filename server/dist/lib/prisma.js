@@ -140,3 +140,4 @@ function createMockPrismaClient() {
     };
 }
 export default prisma;
+//# sourceMappingURL=prisma.js.map

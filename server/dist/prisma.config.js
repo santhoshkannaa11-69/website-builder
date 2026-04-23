@@ -15,3 +15,4 @@ export default defineConfig({
         url: databaseUrl,
     },
 });
+//# sourceMappingURL=prisma.config.js.map

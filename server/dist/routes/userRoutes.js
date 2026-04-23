@@ -10,3 +10,4 @@ userRouter.get('/publish-toggle/:projectId', protect, togglePublish);
 userRouter.post('/publish-toggle/:projectId', protect, togglePublish);
 userRouter.post('/purchase-credits', protect, purchaseCredits);
 export default userRouter;
+//# sourceMappingURL=userRoutes.js.map

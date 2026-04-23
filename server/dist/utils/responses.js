@@ -14,3 +14,4 @@ export const sendError = (res, message, status = 500, code = "INTERNAL_ERROR", r
         },
     });
 };
+//# sourceMappingURL=responses.js.map

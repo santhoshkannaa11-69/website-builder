@@ -33,3 +33,4 @@ app.use('/api/project', projectRouter);
 app.listen(port, () => {
     console.log(`Server is running at http://localhost:${port}`);
 });
+//# sourceMappingURL=server.js.map

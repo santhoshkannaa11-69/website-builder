@@ -15,19 +15,5 @@
       "src": "/(.*)",
       "dest": "/dist/server.js"
     }
-  ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "REDIS_URL": "@redis_url",
-    "AI_API_KEY": "@ai_api_key",
-    "BETTER_AUTH_SECRET": "@better_auth_secret",
-    "BETTER_AUTH_URL": "@better_auth_url",
-    "TRUSTED_ORIGINS": "@trusted_origins",
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "dist/server.js": {
-      "maxDuration": 10
-    }
-  }
+  ]
 }

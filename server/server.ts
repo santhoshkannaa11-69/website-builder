@@ -12,7 +12,11 @@ const app = express();
 const port = 3000;
 
 const corsOptions = {
-    origin: process.env.TRUSTED_ORIGINS?.split(',') || [],
+    origin: [
+        'https://santhoshkannaa11-69.github.io',
+        'http://localhost:3000',
+        ...(process.env.TRUSTED_ORIGINS?.split(',') || [])
+    ],
     credentials: true,
 }
 

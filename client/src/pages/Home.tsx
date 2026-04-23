@@ -6,9 +6,19 @@ import api from "@/configs/axios";
 import { useNavigate } from "react-router-dom";
 
 const Home = () => {
-
-  const {data: session} = authClient.useSession()
   const navigate = useNavigate()
+  
+  // Use a try-catch to handle authentication errors
+  let session, sessionLoading;
+  try {
+    const sessionData = authClient.useSession()
+    session = sessionData.data
+    sessionLoading = sessionData.isPending
+  } catch (error) {
+    console.error('Auth client error:', error)
+    session = null
+    sessionLoading = false
+  }
 
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false)
@@ -39,7 +49,15 @@ const Home = () => {
     
   }
 
+    if (sessionLoading) {
     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2Icon className="animate-spin size-8 text-white" />
+      </div>
+    )
+  }
+
+  return (
         
       <section className="flex flex-col items-center text-white text-sm pb-20 px-4 font-poppins">
           

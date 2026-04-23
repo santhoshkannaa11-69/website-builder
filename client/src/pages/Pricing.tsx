@@ -1,0 +1,107 @@
+import { useState } from "react";
+import { Loader2Icon } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { appPlans } from "../assets/assets";
+import Footer from "../components/Footer";
+import { toast } from "sonner"
+import api from "@/configs/axios";
+
+
+interface Plan {
+    id: string;
+    name: string;
+    price: string;
+    credits: number;
+    description: string;
+    features: string[];
+}
+
+const Pricing = () => {
+
+    const {data: session} = authClient.useSession()
+    const plans: Plan[] = appPlans
+    const [purchasingPlanId, setPurchasingPlanId] = useState<string | null>(null)
+
+    const handlePurchase = async (planId: string) => {
+        try {
+            if(!session?.user) return toast('Please login to purchase credits')
+            
+            // Set loading state immediately
+            setPurchasingPlanId(planId)
+            
+            const {data} = await api.post('/api/user/purchase-credits', {planId})
+            window.location.href = data.payment_link;
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            toast.error(errorMessage);
+            console.log(error);
+            // Reset loading state on error
+            setPurchasingPlanId(null)
+        }
+    }
+
+    return (
+        <>
+            <div className="w-full max-w-5xl mx-auto z-20 max-md:px-4 min-h-[80vh]">
+                <div className="text-center mt-16">
+                    <h2 className="text-gray-100 text-3xl font-medium">Choose Your Plan</h2>
+                    <p className="text-gray-400 text-sm max-w-md mx-auto mt-2">
+                        Start for free and scale up as you grow. Find the perfect plan for your content creation needs.
+                    </p>
+                </div>
+                
+                <div className='pt-14 py-4 px-4 '>
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+                        {plans.map((plan, idx) => (
+                            <div key={idx} className="p-6 bg-black/20 ring ring-indigo-950 w-full rounded-lg text-white shadow-lg hover:ring-indigo-500 transition-all duration-400 flex flex-col h-full">
+                                <div className="flex-grow">
+                                    <h3 className="text-xl font-bold">{plan.name}</h3>
+                                    <div className="my-2">
+                                        <span className="text-4xl font-bold">{plan.price}</span>
+                                        <span className="text-gray-300"> / {plan.credits} credits</span>
+                                    </div>
+
+                                    <p className="text-gray-300 mb-6">{plan.description}</p>
+
+                                    <ul className="space-y-1.5 mb-6 text-sm">
+                                        {plan.features.map((feature, i) => (
+                                            <li key={i} className="flex items-center">
+                                                <svg className="h-5 w-5 text-indigo-300 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                <span className="text-gray-400">{feature}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="mt-auto">
+                                    <button 
+                                        onClick={() => handlePurchase(plan.id)} 
+                                        disabled={purchasingPlanId === plan.id}
+                                        className="w-full py-2 px-4 bg-indigo-500 hover:bg-indigo-600 active:scale-95 text-sm rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-500 flex items-center justify-center gap-2"
+                                    >
+                                        {purchasingPlanId === plan.id ? (
+                                            <>
+                                                <Loader2Icon className="animate-spin size-4" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            'Buy Now'
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <p className="mx-auto text-center text-sm max-w-md mt-10 text-white/60 font-light">Project <span className="text-white">Creation / Revision</span> consume <span className="text-white">5 credits</span>. You can purchase more credits to create more projects.</p>
+
+            </div>
+
+            <Footer />
+        </>
+    )
+}
+
+export default Pricing

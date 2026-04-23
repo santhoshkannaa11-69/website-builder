@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (Free with Supabase or local)
+  db:
+    image: postgres:15-alpine
+    container_name: website-builder-db-free
+    environment:
+      POSTGRES_DB: website_builder
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_free:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache (Free with Upstash or local)
+  redis:
+    image: redis:7-alpine
+    container_name: website-builder-redis-free
+    command: redis-server --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_free:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: website-builder-backend-free
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@db:5432/website_builder
+      REDIS_URL: redis://:redis123@redis:6379
+      AI_API_KEY: ${AI_API_KEY}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-7fNv0oXPNSSa69BMPQLGF2Q3GIHWvvek}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost}
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: website-builder-frontend-free
+    environment:
+      VITE_BASEURL: ${VITE_BASEURL:-http://localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Database Migration
+  migrate:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: website-builder-migrate-free
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@db:5432/website_builder
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["npm", "run", "migrate:deploy"]
+    profiles:
+      - migrate
+
+volumes:
+  postgres_data_free:
+    driver: local
+  redis_data_free:
+    driver: local
+
+networks:
+  default:
+    name: website-builder-free-network

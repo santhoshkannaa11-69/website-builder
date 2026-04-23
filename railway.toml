@@ -1,0 +1,37 @@
+# Railway Configuration File
+# This file tells Railway how to deploy your application
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "docker-compose up -d"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "frontend"
+
+[services.variables]
+PORT = "80"
+
+[[services]]
+name = "backend"
+
+[services.variables]
+PORT = "3000"
+NODE_ENV = "production"
+
+[[services]]
+name = "database"
+
+[services.variables]
+POSTGRES_DB = "website_builder"
+POSTGRES_USER = "postgres"
+POSTGRES_PASSWORD = "postgres123"
+
+[[services]]
+name = "redis"
+
+[services.variables]
+REDIS_PASSWORD = "redis123"

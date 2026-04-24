@@ -4,21 +4,11 @@ import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
 import api from "@/configs/axios";
 import { useNavigate } from "react-router-dom";
+import { getApiErrorMessage } from "@/lib/ui-messages";
 
 const Home = () => {
   const navigate = useNavigate()
-  
-  // Use a try-catch to handle authentication errors
-  let session, sessionLoading;
-  try {
-    const sessionData = authClient.useSession()
-    session = sessionData.data
-    sessionLoading = sessionData.isPending
-  } catch (error) {
-    console.error('Auth client error:', error)
-    session = null
-    sessionLoading = false
-  }
+  const { data: session, isPending: sessionLoading } = authClient.useSession()
 
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false)
@@ -31,6 +21,10 @@ const Home = () => {
     const onSubmitHandler = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
+        if (sessionLoading) {
+          return toast("Checking your session. Please try again in a moment.")
+        }
+
         if(!session?.user){
           return toast.error('Please sign in to create a project')
         } else if(!input.trim()){
@@ -42,19 +36,9 @@ const Home = () => {
         navigate(`/projects/${data.projectId}`)
       } catch (error: unknown) {
         setLoading(false)
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        toast.error(errorMessage);
-        console.log(error);
+        toast.error(getApiErrorMessage(error, 'Unable to create your project right now.'));
       }
     
-  }
-
-    if (sessionLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2Icon className="animate-spin size-8 text-white" />
-      </div>
-    )
   }
 
   return (
@@ -92,8 +76,14 @@ const Home = () => {
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-3">Average generation time: 30-90 seconds depending on complexity.</p>
-          <button disabled={loading} className="ml-auto flex items-center gap-2 bg-gradient-to-r from-[#CB52D4] to-indigo-600 rounded-md px-4 py-2 disabled:opacity-70">
-            {!loading ? 'Create with AI': (
+          <button disabled={loading || sessionLoading} className="ml-auto flex items-center gap-2 bg-gradient-to-r from-[#CB52D4] to-indigo-600 rounded-md px-4 py-2 disabled:opacity-70">
+            {!loading ? (
+                sessionLoading ? (
+                  <>
+                  Checking account <Loader2Icon className='animate-spin size-4 text-white' />
+                  </>
+                ) : 'Create with AI'
+            ) : (
                 <>
                 Starting project <Loader2Icon className='animate-spin size-4 text-white' />
                 </>

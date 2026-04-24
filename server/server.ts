@@ -1,88 +1,52 @@
-import express, { Request,  Response, NextFunction } from 'express';
-import 'dotenv/config';
-import cors from 'cors';
-import { toNodeHandler } from 'better-auth/node';
-import { auth } from './lib/auth';
-import userRouter from './routes/userRoutes';
-import projectRouter from './routes/projectRoutes';
-import { stripeWebhook } from './controllers/stripeWebhook';
-import prisma from './lib/prisma';
+import "dotenv/config";
+import cors from "cors";
+import express, { NextFunction, Request, Response } from "express";
+import { toNodeHandler } from "better-auth/node";
+import { stripeWebhook } from "./controllers/stripeWebhook";
+import { auth, isOriginAllowed } from "./lib/auth";
+import projectRouter from "./routes/projectRoutes";
+import userRouter from "./routes/userRoutes";
+import { sendError } from "./utils/responses";
 
 const app = express();
+const port = Number(process.env.PORT || 3000);
 
-const port = 3000;
+app.use(
+    cors({
+        origin: (origin, callback) => {
+            if (isOriginAllowed(origin)) {
+                callback(null, true);
+                return;
+            }
 
-const corsOptions = {
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:3000',
-        'https://santhoshkannaa11-69.github.io',
-        'https://santhoshkannaa11-69.github.io/website-builder',
-        'https://web-wizard-liard.vercel.app'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-}
+            callback(new Error("Origin not allowed by CORS"));
+        },
+        credentials: true,
+    }),
+);
 
-app.use(cors(corsOptions))
-app.use(express.json({limit: '50mb'}))
-app.post('/api/stripe', express.raw({ type: 'application/json' }), stripeWebhook)
+app.get("/", (_req, res) => res.send("OK"));
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-// Debug middleware to track all API requests
-app.use((req: Request, res: Response, next) => {
-    console.log(`${req.method} ${req.originalUrl}`);
-    console.log('Headers:', req.headers);
-    console.log('Body:', req.body);
-    next();
-});
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), stripeWebhook);
 
-app.use('/api/auth', toNodeHandler(auth));
+app.use(express.json({ limit: "2mb" }));
 
-// Error handling middleware
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-    console.error('Error occurred:', err);
-    console.error('Stack trace:', err.stack);
-    res.status(500).json({ error: 'Internal Server Error', message: err.message });
-});
+app.use("/api/auth", toNodeHandler(auth));
+app.use("/api/user", userRouter);
+app.use("/api/project", projectRouter);
 
-app.get('/', (req: Request, res: Response) => {
-    res.send('Server is Live!');
-});
-
-app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Test endpoint to verify server is receiving requests
-app.post('/test', (req: Request, res: Response) => {
-    console.log('Test endpoint hit!');
-    console.log('Body:', req.body);
-    res.json({ message: 'Test successful', body: req.body });
-});
-
-app.use('/api/user', userRouter);
-app.use('/api/project', projectRouter)
-
-// Wait for Prisma to initialize before starting the server
-async function startServer() {
-    // Wait a bit for Prisma to initialize
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Check if Prisma is ready
-    if (!prisma || !prisma.websiteProject) {
-        console.warn('Prisma not fully initialized, but starting server anyway...');
-    } else {
-        console.log('Prisma initialized successfully');
+app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    if (res.headersSent) {
+        next(err);
+        return;
     }
-    
-    app.listen(port, () => {
-        console.log(`Server is running at http://localhost:${port}`);
-    });
-}
 
-startServer();
+    const message = err instanceof Error ? err.message : "Internal server error";
+    console.error("[server]", err);
+    sendError(res, message);
+});
+
+app.listen(port, () => {
+    console.log(`Server listening on http://localhost:${port}`);
+});

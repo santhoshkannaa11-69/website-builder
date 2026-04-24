@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import type { Project } from "../types";
 import { Loader2Icon, PlusIcon, TrashIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import api from "@/configs/axios";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { getApiErrorMessage } from "@/lib/ui-messages";
 
 const MyProjects = () => {
 
@@ -14,17 +15,16 @@ const MyProjects = () => {
     const [projects, setProjects] = useState<Project[]>([])
     const navigate = useNavigate()
 
-    const fetchedProjects = useCallback(async () => {
+    const fetchedProjects = async () => {
         try {
             const { data } = await api.get(`/api/user/projects`)
             setProjects(data.projects)
-            setLoading(false)
         } catch (error: unknown) {
-            console.log(error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage)
+            toast.error(getApiErrorMessage(error, "Unable to load your projects right now."))
+        } finally {
+            setLoading(false)
         }
-    }, [])
+    }
 
     const deleteProject = async (projectId:string) => {
          try {
@@ -32,22 +32,47 @@ const MyProjects = () => {
             if(!confirm) return;
             const { data } = await api.delete(`/api/project/${projectId}`)
             toast.success(data.message)
-            fetchedProjects()
+            void fetchedProjects()
         } catch (error: unknown) {
-            console.log(error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage)
+            toast.error(getApiErrorMessage(error, "Unable to delete this project right now."))
         }
     } 
 
     useEffect(()=> {
+        let isActive = true;
+
+        const loadProjects = async () => {
+            try {
+                const { data } = await api.get(`/api/user/projects`)
+
+                if (!isActive) {
+                    return;
+                }
+
+                setProjects(data.projects)
+            } catch (error: unknown) {
+                if (isActive) {
+                    toast.error(getApiErrorMessage(error, "Unable to load your projects right now."))
+                }
+            } finally {
+                if (isActive) {
+                    setLoading(false)
+                }
+            }
+        };
+
         if(session?.user && !isPending){
-            fetchedProjects()
+            void loadProjects()
         } else if(!isPending && !session?.user){
+            setLoading(false)
             navigate('/');
             toast('Please login to view your projects');
         }
-    }, [session?.user, isPending, navigate, fetchedProjects])
+
+        return () => {
+            isActive = false;
+        };
+    }, [session?.user, isPending, navigate])
 
     return (
         <>

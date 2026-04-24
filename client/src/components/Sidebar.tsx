@@ -4,6 +4,7 @@ import { BotIcon, EyeIcon, Loader2Icon, SendIcon, UserIcon } from "lucide-react"
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import api from "@/configs/axios";
+import { getApiErrorCode, getApiErrorMessage, getApiErrorStatus } from "@/lib/ui-messages";
 
 interface SidebarProps {
     isMenuOpen: boolean;
@@ -22,9 +23,7 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
             const { data } = await api.get(`/api/user/project/${project.id}`);
             setProject(data.project);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage);
-            console.log(error);
+            toast.error(getApiErrorMessage(error, "Unable to refresh project right now."));
         }
     };
 
@@ -34,23 +33,13 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
             if(!confirm) return;
             setIsGenerating(true);
             
-            console.log('Rollback: Starting rollback to version:', versionId);
-            
-            // Use POST method as defined in the routes
             const { data } = await api.post(`/api/project/rollback/${project.id}/${versionId}`);
-            
-            console.log('Rollback: Server response:', data);
             toast.success(data.message);
-            
-            // Fetch updated project data
             await fetchProject();
-            
             setIsGenerating(false);
         } catch (error: unknown) {
             setIsGenerating(false);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage);
-            console.error('Rollback error:', error);
+            toast.error(getApiErrorMessage(error, "Unable to rollback this version right now."));
         }
     };
 
@@ -59,62 +48,45 @@ const Sidebar = ({isMenuOpen, project, setProject, isGenerating, setIsGenerating
         let interval: number | undefined;
         
         try {
-            // Check user credits before making the request
-            console.log('Revision: Checking user credits...');
             const creditsResponse = await api.get('/api/user/credits');
             const userCredits = creditsResponse.data.credits;
-            console.log('Revision: User credits:', userCredits);
             
             if (userCredits < 5) {
-                console.log('Revision: Insufficient credits, showing error');
                 toast.error("You don't have enough credits to make revisions. Please add more credits to continue.");
                 return;
             }
             
-            console.log('Revision: Credits sufficient, proceeding with revision request');
             setIsGenerating(true);
             interval = setInterval(() => {
-                fetchProject();
+                void fetchProject();
             }, 10000);
-            const { data } = await api.post(`/api/project/revision/${project.id}`, 
-                { message: input });
+            const { data } = await api.post(`/api/project/revision/${project.id}`, { message: input });
             toast.success(data.message);
             setInput('');
-            clearInterval(interval);
-            setIsGenerating(false);
+            await fetchProject();
         } catch (error: unknown) {
-            setIsGenerating(false);
             clearInterval(interval);
-            
-            // Handle specific credit insufficient error
-            if (error && typeof error === 'object' && 'response' in error) {
-                const axiosError = error as any;
-                const status = axiosError.response?.status;
-                const errorCode = axiosError.response?.data?.code;
-                
-                // Handle credit insufficient errors (403 status)
-                if (status === 403 && errorCode === "INSUFFICIENT_CREDITS") {
-                    toast.error("You don't have enough credits to make revisions. Please add more credits to continue.");
-                    return;
-                }
-                
-                // Handle authentication errors (401 status)
-                if (status === 401) {
-                    toast.error("Please sign in to make revisions to your website.");
-                    return;
-                }
-                
-                // Handle other 403 errors
-                if (status === 403) {
-                    toast.error("You don't have permission to make revisions to this project.");
-                    return;
-                }
+
+            const status = getApiErrorStatus(error);
+            const errorCode = getApiErrorCode(error);
+
+            if (status === 403 && errorCode === "INSUFFICIENT_CREDITS") {
+                toast.error("You don't have enough credits to make revisions. Please add more credits to continue.");
+                return;
             }
-            
-            // Generic error handling
-            const errorMessage = error instanceof Error ? error.message : 'Something went wrong. Please try again.';
-            toast.error(errorMessage);
-            console.log(error);
+
+            if (status === 401) {
+                toast.error("Please sign in to make revisions to your website.");
+                return;
+            }
+
+            if (status === 403) {
+                toast.error("You don't have permission to make revisions to this project.");
+                return;
+            }
+
+            setIsGenerating(false);
+            toast.error(getApiErrorMessage(error, "Something went wrong. Please try again."));
         }
     };
 

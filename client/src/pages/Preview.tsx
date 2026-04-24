@@ -1,45 +1,60 @@
-import { useEffect, useState, useCallback } from "react"
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom";
 import { Loader2Icon } from "lucide-react";
 import ProjectPreview from "../components/ProjectPreview";
 import type { Project, Version } from "../types";
 import api from "@/configs/axios";
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client";
+import { getApiErrorMessage, statusCopy } from "@/lib/ui-messages";
 
 
 const Preview = () => {
 
     const {data: session, isPending} = authClient.useSession()
     const { projectID, versionID } = useParams()
+    const navigate = useNavigate();
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(true);
 
-    const fetchCode = useCallback(async () => {
-    try {
-        const { data } = await api.get(`/api/project/preview/${projectID}`)
-        setCode(data.project.current_code)
-        if(versionID){
-            data.project.versions.forEach((version: Version)=>{
-                if(version.id === versionID){
-                    setCode(version.code)
-                }
-            })
-        } 
-        setLoading(false)
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-        toast.error(errorMessage);
-        console.log(error);
-         
-    }
-    }, [projectID, versionID])
-
     useEffect(()=> {
+        let isActive = true;
+
+        const fetchCode = async () => {
+            try {
+                const { data } = await api.get(`/api/project/preview/${projectID}`)
+                const versionCode = versionID
+                    ? (data.project.versions as Version[]).find((version) => version.id === versionID)?.code
+                    : undefined;
+
+                if (!isActive) {
+                    return;
+                }
+
+                setCode(versionCode || data.project.current_code || '');
+            } catch (error: unknown) {
+                if (isActive) {
+                    toast.error(getApiErrorMessage(error, "Unable to load this preview right now."));
+                }
+            } finally {
+                if (isActive) {
+                    setLoading(false)
+                }
+            }
+        };
+
         if(!isPending && session?.user){
-            fetchCode()
+            void fetchCode()
+        } else if (!isPending && !session?.user) {
+            setLoading(false)
+            toast(statusCopy.loginRequired)
+            navigate("/")
         }
-    },[session?.user, isPending, fetchCode])
+
+        return () => {
+            isActive = false;
+        };
+    },[session?.user, isPending, projectID, versionID, navigate])
 
     if(loading){
         return (

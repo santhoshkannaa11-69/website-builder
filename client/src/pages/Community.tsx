@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import type { Project } from "../types";
 import { Loader2Icon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import api from "@/configs/axios";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/ui-messages";
 
 const Community = () => {
 
@@ -13,37 +14,35 @@ const Community = () => {
     const navigate = useNavigate()
 
 
-    const fetchProjects = useCallback(async () => {
-        try {
-            console.log('Fetching projects from:', `${import.meta.env.VITE_BASEURL}/api/project/published`);
-            const { data } = await api.get(`/api/project/published`);
-            console.log('Received projects data:', data);
-            setProjects(data.projects);
-            setLoading(false);
-        } catch (error: unknown) {
-            console.error('Full error object:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            console.error('Error message:', errorMessage);
-            
-            // Check if it's an axios error with more details
-            if (error && typeof error === 'object' && 'response' in error) {
-                const axiosError = error as any;
-                console.error('Axios error details:', {
-                    status: axiosError.response?.status,
-                    statusText: axiosError.response?.statusText,
-                    data: axiosError.response?.data
-                });
-                toast.error(`Network Error: ${axiosError.response?.status || 'Unknown'} - ${errorMessage}`);
-            } else {
-                toast.error(`Network Error: ${errorMessage}`);
-            }
-        }
-    }, [])
-
-
     useEffect(()=> {
-       fetchProjects()
-    }, [fetchProjects])
+        let isActive = true;
+
+        const fetchProjects = async () => {
+            try {
+                const { data } = await api.get(`/api/project/published`);
+
+                if (!isActive) {
+                    return;
+                }
+
+                setProjects(data.projects);
+            } catch (error: unknown) {
+                if (isActive) {
+                    toast.error(getApiErrorMessage(error, "Unable to load published projects right now."));
+                }
+            } finally {
+                if (isActive) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        void fetchProjects();
+
+        return () => {
+            isActive = false;
+        };
+    }, [])
 
     return (
         <>

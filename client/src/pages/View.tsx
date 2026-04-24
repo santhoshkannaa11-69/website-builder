@@ -2,9 +2,10 @@
     import { Loader2Icon } from "lucide-react";
     import ProjectPreview from "../components/ProjectPreview";
     import type { Project } from "../types";
-    import { useEffect, useState, useCallback } from "react";
+    import { useEffect, useState } from "react";
     import api from "@/configs/axios";
     import { toast } from "sonner";
+    import { getApiErrorMessage } from "@/lib/ui-messages";
 
 
 
@@ -15,21 +16,35 @@
         const [code, setCode] = useState('')
         const [loading, setLoading] = useState(true)
 
-        const fetchCode = useCallback(async () => {
-            try {
-                const { data } = await api.get(`/api/project/published/${projectID}`);
-                setCode(data.code)
-                setLoading(false)
-            } catch (error: unknown) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-                toast.error(errorMessage);
-                console.log(error);
-            }
-        }, [projectID])
-
         useEffect(()=> {
-            fetchCode()
-        },[fetchCode])
+            let isActive = true;
+
+            const fetchCode = async () => {
+                try {
+                    const { data } = await api.get(`/api/project/published/${projectID}`);
+
+                    if (!isActive) {
+                        return;
+                    }
+
+                    setCode(data.code)
+                } catch (error: unknown) {
+                    if (isActive) {
+                        toast.error(getApiErrorMessage(error, "Unable to load this project preview right now."));
+                    }
+                } finally {
+                    if (isActive) {
+                        setLoading(false)
+                    }
+                }
+            };
+
+            void fetchCode()
+
+            return () => {
+                isActive = false;
+            };
+        },[projectID])
 
         if(loading){
             return (

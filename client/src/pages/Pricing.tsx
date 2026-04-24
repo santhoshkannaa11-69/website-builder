@@ -30,12 +30,9 @@ const Pricing = () => {
             setPurchasingPlanId(planId)
             
             const {data} = await api.post('/api/user/purchase-credits', {planId})
-            window.location.href = data.payment_link;
+            window.location.assign(data.payment_link);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            toast.error(errorMessage);
-            console.log(error);
-            // Reset loading state on error
+            toast.error(error instanceof Error ? error.message : 'Unknown error occurred');
             setPurchasingPlanId(null)
         }
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthView } from "@daveyplate/better-auth-ui";
 import { useSession } from "../../lib/auth-client";
+import { apiBaseUrl, isLocalApiBase } from "@/configs/api-base";
 
 export default function AuthPage() {
     const { pathname } = useParams()
@@ -21,7 +22,7 @@ export default function AuthPage() {
 
         const checkServer = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_BASEURL}/`, {
+                const response = await fetch(`${apiBaseUrl}/`, {
                     signal: controller.signal,
                     credentials: 'include',
                 })
@@ -60,7 +61,15 @@ export default function AuthPage() {
         <main className="p-6 flex flex-col justify-center items-center h-[80vh]">
             {serverStatus === "offline" && (
                 <div className="mb-4 w-full max-w-md rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-                    Auth server is not running. Start the backend in the <code>server</code> folder with <code>npm run start</code>, then try sign-in or sign-up again.
+                    {isLocalApiBase ? (
+                        <>
+                            Auth server is not running. Start the backend in the <code>server</code> folder with <code>npm run start</code>, then try sign-in or sign-up again.
+                        </>
+                    ) : (
+                        <>
+                            Auth server is unavailable at <code>{apiBaseUrl}</code>. Please try again in a moment.
+                        </>
+                    )}
                 </div>
             )}
             <AuthView pathname={pathname} classNames={{base: 'bg-black/10 ring ring-indigo-900'}}/>

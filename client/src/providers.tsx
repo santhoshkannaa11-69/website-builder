@@ -3,6 +3,7 @@ import { authClient } from "./lib/auth-client"
 import { useNavigate, NavLink } from "react-router-dom"
 import type React from "react"
 import { toast as showToast } from "sonner"
+import { apiBaseUrl, isLocalApiBase } from "@/configs/api-base"
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const navigate = useNavigate()
@@ -16,7 +17,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }) => {
         const safeMessage = message ?? "Something went wrong."
         const friendlyMessage = /failed to fetch|network request failed/i.test(safeMessage)
-            ? "Auth server is offline. Please check your internet connection and try again."
+            ? isLocalApiBase
+                ? `Auth server is offline at ${apiBaseUrl}. Start the backend in the server folder with npm run start, then try again.`
+                : `Auth server is unavailable at ${apiBaseUrl}. Please try again in a moment.`
             : safeMessage
 
         if (variant === "default") {

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "cd server && npm ci",
+  "buildCommand": "cd server && npm run build",
+  "builds": [
+    {
+      "src": "server/dist/server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/server/dist/server.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/server/dist/server.js"
+    },
+    {
+      "src": "/",
+      "dest": "/server/dist/server.js"
+    }
+  ]
+}
